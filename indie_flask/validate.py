@@ -32,8 +32,10 @@ def follow_redirects(url, max_depth):
         r = requests.head(url)
         if r.status_code in [ 301, 302 ]:
             return _wrapped(r.headers['Location'], depth+1)
-        else:
+        elif r.status_code in [ 200 ]:
             return url
+        else:
+            raise InvalidResource('{0}: received http status [{1}]'.format(url, r.status_code))
     return _wrapped(url, 0)
         
 def async_validate(self, source, target):
