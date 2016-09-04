@@ -60,7 +60,7 @@ def async_validate(self, source, target):
     self.update_state(state='RETREIVING_SOURCE')
     r = requests.get(source)
     if r.status_code != 200:
-        return failure('unable to retreive source url')
+        raise InvalidResource('unable to retreive source url, got [{0}]'.format(r.status_code))
 
     #is source textual?
     if r.headers['content-type'].split(';')[0] not in text_types:

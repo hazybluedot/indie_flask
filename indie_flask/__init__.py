@@ -32,7 +32,7 @@ def publish(self, args):
     logger.info('Publishing with args: {0}'.format(args))
     if args['status'] == 'VALID':
         source, target = args['source'], args['target']
-        return _publish(source, target)
+        return _publish(source, target, celery.conf['PUBLISH_ENDPOINT'])
 
 @celery.task(bind=True)
 def invalid(self, uuid):

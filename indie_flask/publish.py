@@ -25,19 +25,19 @@ def post_id_from_url(url):
     return u.path.split('/')[-1]
 
 @celery.task
-def publish(source, target):
+def publish(source, target, endpoint):
     now = isonow() #datetime.now(timezone('UTC'))
     post_id = post_id_from_url(target)
 
     uparts = urlparse(source)
     
-    id = slugify(u'mention-{0}-{1}'.format(uparts.hostname, uparts.path.split('?')[0].replace('/', '-')))
-    endpoint = 'http://dmaczka:password@127.0.0.1:5984/myblog/{0}'.format(id)
-
+    _id = slugify(u'mention-{0}-{1}'.format(uparts.hostname, uparts.path.split('?')[0].replace('/', '-')))
+    _endpoint = endpoint.format(_id)
+    
     mentions = mention_from_url(source)
         
     data = {
-        '_id': id, 
+        '_id': _id, 
         'post_id': post_id,
         'type': 'mention',
         'link': source,
@@ -46,7 +46,7 @@ def publish(source, target):
 
     data.update(mentions)
     
-    r = requests.get(endpoint)
+    r = requests.get(_endpoint)
     if r.status_code == 200:
         current = r.json()
         current.update(data)
@@ -57,6 +57,6 @@ def publish(source, target):
             
     #print('PUT {0}'.format(endpoint))
     #print('data: {0}'.format(json.dumps(data)))
-    r = requests.put(endpoint, json.dumps(data))
+    r = requests.put(_endpoint, json.dumps(data))
     if r.status_code not in [ 201, 202 ]:
-        print('PUT {0} [{1}] ({2})'.format(endpoint, r.status_code, r.text))
+        print('PUT {0} [{1}] ({2})'.format(_endpoint, r.status_code, r.text))
