@@ -44,6 +44,10 @@ def invalid(self, uuid):
 
 validate_and_publish = validate.subtask(link=publish.s(), link_error=invalid.s())
 
+@app.route('/webmention', methods=['GET'])
+def webmention_get():
+    return make_response('a happy webmention endpoint\n', 200)
+
 @app.route('/webmention', methods=['POST'])
 def webmention():
     try:
