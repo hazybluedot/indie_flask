@@ -31,8 +31,9 @@ def validate(self, source, target):
 def publish(self, args):
     logger.info('Publishing with args: {0}'.format(args))
     if args['status'] == 'VALID':
-        source, target = args['source'], args['target']
-        return _publish(source, target, celery.conf['PUBLISH_ENDPOINT'])
+        source = args.pop('source')
+        target = args.pop('target')
+        return _publish(source, target, celery.conf['PUBLISH_ENDPOINT'], **args)
 
 @celery.task(bind=True)
 def invalid(self, uuid):

@@ -68,8 +68,14 @@ def async_validate(self, source, target):
 
     #does source actually link to target
     self.update_state(state='CHECKING_LINKBACK')
-    html = r.text
-    soup = BeautifulSoup(html, "html.parser")
+    # stole this bit from mf2py.Parser.__init__
+    if 'charset' in r.headers.get('content-type', ''):
+        content = r.text
+    else:
+        content = r.content
+
+    soup = BeautifulSoup(content, "html5lib")
+
     tag = soup.find('a', attrs={'href': target})
     if not tag:
         return failure('source does not link to target')
@@ -77,4 +83,4 @@ def async_validate(self, source, target):
     #register webmention with blog
     #TODO
     
-    return { 'status': 'VALID', 'source': source, 'target': real_target }
+    return { 'status': 'VALID', 'source': source, 'target': real_target, 'body': content }
