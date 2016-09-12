@@ -17,26 +17,30 @@ VALID_SCHEMES = [ 'http', 'https' ]
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
-from .validate import async_validate
-from .publish import publish as _publish
+from indie_helper.mentions import validate as _validate
+from indie_helper.mentions import publish as _publish
 
 logger = get_task_logger(__name__)
 
 @celery.task(bind=True)
 def validate(self, source, target):
     logger.info('validate with source="{0}", target="{1}"'.format(source, target))
-    return async_validate(self, source, target)
+    return _validate(source, target,
+                     managed_hosts=celery.conf['MANAGED_HOSTS'],
+                     update_state = self.update_state)
 
 @celery.task(bind=True)
 def publish(self, args):
     logger.info('Publishing with args: {0}'.format(args))
-    if args['status'] == 'VALID':
-        source = args.pop('source')
-        target = args.pop('target')
-        return _publish(source, target, celery.conf['PUBLISH_ENDPOINT'], **args)
+    if args['verified']['state']:
+        source = args.get('source')
+        target = args.get('target')
+        body = args.pop('body', None)
+        return _publish(source, target, celery.conf['PUBLISH_ENDPOINT'], body=body, data=args)
 
 @celery.task(bind=True)
 def invalid(self, uuid):
+    # validation failed, if this was a re-validation of existing mention, update it, else, reject it
     result = self.app.AsyncResult(uuid)
     self.update_state(meta={'info': str(result.result)})
     print('Task failure: {0}: {1}'.format(type(result.result), result.result))
